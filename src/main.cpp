@@ -8,9 +8,12 @@
 #include "WS2812.pio.h"         // Include WS2812 LED driver header
 #include "drivers/leds.h"       // Include the header for the LEDs control class
 #include "drivers/lis3dh.h"     // Include the header for the Accelerator control class
+#include "tasks/led_task.h"           // Include the LED task header
+#include "tasks/accelerometer_task.h"  // Include the accelerometer task header
 #include "drivers/accelerometer_task.h"  // Include the header for the accelerometer task
 #include "drivers/microphone.h" // Include the header for the mircophone task
 #include "tasks/microphone_task.h" 
+#include "tasks/task_manager.h"  // Include the task manager header file
 #include "arm_math.h"
 #include "arm_const_structs.h"  // Include the CMSIS-DSP library for FFT
 
@@ -22,22 +25,12 @@
 #define I2C_SCL_PIN 17          // Define the SCL pin for I2C
 #define LIS3DH_I2C_ADDRESS 0x19 // The I2C address of the LIS3DH
 #define BUTTON_PIN 15           // GPIO pin for the button (SWI)
-#define SNAKE_LENGTH 6          // Length of the "snake"
 #define BUFFER_SIZE 1024        // Define buffer size for reading samples
 #define FFT_SIZE 1024           // Define the size of the FFT (must be a power of 2)
 #define DC_OFFSET 2048          // Example DC offset value, modify based on your microphone
 
-// Task identifiers
-enum Tasks {
-    SNAKE_TASK,
-    ACCELEROMETER_TASK,
-    MICROPHONE_TASK,
-    PLACEHOLDER_TASK, 
-    NUM_TASKS
-};
-
 // Global variable to track the current task
-volatile Tasks current_task = SNAKE_TASK;
+volatile Tasks current_task = LED_TASK;
 
 // Define the Hanning window in Q15 format as a global constant
 const q15_t hanning_window[BUFFER_SIZE] = {
@@ -80,7 +73,6 @@ int main() {
         printf("LIS3DH initialization failed!\n");
         return -1;
     }
-
     printf("LIS3DH initialized.\n");
 
     uint16_t buffer[BUFFER_SIZE];  // Create a buffer to hold ADC samples
@@ -90,88 +82,13 @@ int main() {
     // Main loop
     while (true) {
         switch (current_task) {
-            case SNAKE_TASK:
-                // Task 1: Snake animation
-                for (int i = 0; i < NUM_LEDS; ++i) {
-                    // Clear all LEDs
-                    ledStrip.clear();
-
-                    // Set the colors of the snake
-                    for (int j = 0; j < SNAKE_LENGTH; ++j) {
-                        int led_index = (i + j) % NUM_LEDS;
-                        // Calculate RGB from Hue
-                        uint8_t red, green, blue;
-                        hueToRGB(hue + j * 30, &red, &green, &blue);  // Gradually change the hue along the snake
-
-                        // Print RGB values to debug
-                        printf("LED %d: RGB(%u, %u, %u)\n", led_index, red, green, blue);
-
-                        ledStrip.setColor(led_index, red, green, blue);
-                    }
-
-
-                    volatile int no_op_delay = 0;  // Add this before sleep or delay calls
-                    no_op_delay++;  // Increment to ensure it is not optimized out
-
-                    // Update LEDs to show the set colors
-                    ledStrip.update();
-                    sleep_ms(50);  // Update rate controls the speed of the snake
-
-                    // Increment hue for the next cycle to change colors
-                    hue = (hue + 1) % 360;
-
-                    // If task was switched, break out of the loop
-                    if (current_task != SNAKE_TASK) {
-                        break;
-                    }
-                }
+            case LED_TASK:
+                run_led_task(ledStrip);  // Call the modularized LED task function
                 break;
 
             case ACCELEROMETER_TASK: {
                 // Task 2: Accelerometer-based LED control
-                float x_g, y_g, z_g;
-
-                // Read acceleration data
-                if (!lis3dh.read_acceleration_g(&x_g, &y_g, &z_g)) {
-                    printf("Failed to read acceleration data\n");
-                    continue;
-                }
-
-                // Print the acceleration values to the terminal
-                printf("X: %.3f g, Y: %.3f g, Z: %.3f g\n", x_g, y_g, z_g);
-
-                // Map the X, Y, and Z axis tilt to LED positions
-                int led_x = (int)((x_g + 1) * 2);  // Map x from -1g to 1g onto LEDs 0-3
-                int led_y = 4 + (int)((y_g + 1) * 2);  // Map y from -1g to 1g onto LEDs 4-7
-                int led_z = 8 + (int)((z_g + 1) * 2);  // Map z from -1g to 1g onto LEDs 8-11
-
-                // Ensure the indices are within bounds
-                led_x = led_x < 0 ? 0 : (led_x >= 4 ? 3 : led_x);
-                led_y = led_y < 4 ? 4 : (led_y >= 8 ? 7 : led_y);
-                led_z = led_z < 8 ? 8 : (led_z >= 12 ? 11 : led_z);
-
-                printf("Mapped LED positions: led_x = %d, led_y = %d, led_z = %d\n", led_x, led_y, led_z);
-
-                // Clear the LED strip
-                ledStrip.clear();
-                sleep_ms(1);
-
-                // Set the appropriate LEDs to indicate tilt for each axis
-                ledStrip.setColor(led_x, 255, 0, 0);  // X axis tilt in red
-                ledStrip.setColor(led_y, 0, 255, 0);  // Y axis tilt in green
-                ledStrip.setColor(led_z, 0, 0, 255);  // Z axis tilt in blue
-
-                // Update the LED strip to show the new state
-                ledStrip.update();
-                printf("LEDs updated: led_x = %d, led_y = %d, led_z = %d\n", led_x, led_y, led_z);  // Debug output
-
-                // Add a delay after the update to ensure LEDs remain visible
-                sleep_ms(100);  // Adjust the delay as needed to give enough time for the LEDs to be visible
-
-                // Check if task was switched
-                if (current_task != ACCELEROMETER_TASK) {
-                    break;
-                }
+                run_accelerometer_task(lis3dh, ledStrip);  // Call the accelerometer task
                 break;
             }
 
@@ -180,7 +97,7 @@ int main() {
                 break;
             }
 
-            case PLACEHOLDER_TASK:
+            case BLUETOOTH_TASK:
                 // Placeholder task: Currently does nothing but can be expanded
                 printf("Placeholder task running...\n");
                 sleep_ms(1000);  // Sleep for a short while to simulate a task
@@ -192,41 +109,4 @@ int main() {
         }
     }
     return 0;
-}
-
-void hueToRGB(uint hue, uint8_t* red, uint8_t* green, uint8_t* blue) {
-    float s = 1.0;  // Maximum saturation
-    float v = 200.0;  // Maximum brightness 255
-    float h = hue / 60.0;
-    int i = (int)h;
-    float f = h - (float)i;
-    float p = v * (1 - s);
-    float q = v * (1 - s * f);
-    float t = v * (1 - s * (1 - f));
-
-    switch(i) {
-        case 0:
-            *red = v, *green = t, *blue = p;
-            break;
-        case 1:
-            *red = q, *green = v, *blue = p;
-            break;
-        case 2:
-            *red = p, *green = v, *blue = t;
-            break;
-        case 3:
-            *red = p, *green = q, *blue = v;
-            break;
-        case 4:
-            *red = t, *green = p, *blue = v;
-            break;
-        case 5:
-        default:
-            *red = v, *green = p, *blue = q;
-            break;
-    }
-
-    *red = (uint8_t)*red;
-    *green = (uint8_t)*green;
-    *blue = (uint8_t)*blue;
 }

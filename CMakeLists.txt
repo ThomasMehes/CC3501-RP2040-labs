@@ -58,6 +58,8 @@ if(CrossCompiling)
         src/drivers/accelerometer_task.cpp
         src/drivers/microphone.cpp 
         src/tasks/microphone_task.cpp 
+        src/tasks/led_task.cpp
+        src/tasks/accelerometer_task.cpp
     )
     target_include_directories(labs
         PUBLIC 
@@ -114,9 +116,11 @@ else()
         tests/mocks/ws2812.cpp
         src/drivers/leds.cpp
         src/drivers/lis3dh.cpp
-        src/drivers/accelerometer_task.cpp  # Corrected typo
+        src/drivers/accelerometer_task.cpp 
         src/drivers/microphone.cpp
         src/tasks/microphone_task.cpp
+        src/tasks/led_task.cpp
+        src/tasks/accelerometer_task.cpp
     )
     target_include_directories(labs
         PUBLIC 
