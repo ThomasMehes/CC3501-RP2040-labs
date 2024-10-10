@@ -43,7 +43,7 @@ void hueToRGB(uint hue, uint8_t* red, uint8_t* green, uint8_t* blue) {
 
 // Function to run the LED task (snake animation)
 void run_led_task(LEDs& ledStrip) {
-    uint hue = 0;  // Start with red for the snake task
+    static uint hue = 0;  // Make the hue variable static to maintain its state between function calls
 
     // Task: Snake animation
     for (int i = 0; i < NUM_LEDS; ++i) {

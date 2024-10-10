@@ -10,7 +10,7 @@
 #include "drivers/lis3dh.h"     // Include the header for the Accelerator control class
 #include "tasks/led_task.h"           // Include the LED task header
 #include "tasks/accelerometer_task.h"  // Include the accelerometer task header
-#include "drivers/accelerometer_task.h"  // Include the header for the accelerometer task
+#include "drivers/accelerometer.h"  // Include the header for the accelerometer task
 #include "drivers/microphone.h" // Include the header for the mircophone task
 #include "tasks/microphone_task.h" 
 #include "tasks/task_manager.h"  // Include the task manager header file

@@ -1,3 +1,4 @@
+// accelerometer_task.cpp
 #include "lis3dh.h"
 #include "leds.h"
 #define NUM_LEDS 12             // Number of LEDs in the strip
@@ -44,6 +45,7 @@ void accelerometer_spirit_level(LIS3DH& lis3dh, LEDs& ledStrip) {
 
         // Small delay before the next read
         sleep_ms(500);
+
     }
     printf("Exiting accelerometer_spirit_level\n");
 }

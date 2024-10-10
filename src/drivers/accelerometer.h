@@ -1,5 +1,5 @@
-#ifndef ACCELEROMETER_TASK_H
-#define ACCELEROMETER_TASK_H
+#ifndef ACCELEROMETER_H
+#define ACCELEROMETER_H
 
 #include "lis3dh.h"
 #include "leds.h"

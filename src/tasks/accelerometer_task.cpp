@@ -6,6 +6,7 @@
 #include "hardware/gpio.h"
 #include "drivers/leds.h"
 #include "drivers/lis3dh.h"
+#include "task_manager.h"
 
 void run_accelerometer_task(LIS3DH &lis3dh, LEDs &ledStrip) {
     float x_g, y_g, z_g;
@@ -48,5 +49,10 @@ void run_accelerometer_task(LIS3DH &lis3dh, LEDs &ledStrip) {
 
         // Add a delay after the update to ensure LEDs remain visible
         sleep_ms(100);  // Adjust the delay as needed to give enough time for the LEDs to be visible
+
+        // If task was switched, break out of the loop
+        if (current_task != ACCELEROMETER_TASK) {
+            break;
+        }
     }
 }

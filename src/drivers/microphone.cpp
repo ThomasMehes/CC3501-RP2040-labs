@@ -1,8 +1,10 @@
 #include "microphone.h"
 #include <stdio.h>
-#define DC_OFFSET 2048
+#include "hardware/adc.h"  // Ensure that the ADC library is included
 
-// Constructor
+#define DC_OFFSET 2048  // Define a constant for the DC offset
+
+// Constructor: Initialize microphone with a default GPIO pin
 microphone::microphone()
     : gpio_pin(26) {}
 
@@ -17,21 +19,34 @@ void microphone::init(uint gpio_pin)
 {
     this->gpio_pin = gpio_pin;
 
+    // Map the GPIO pin to the corresponding ADC input channel
+    uint8_t adc_input = 0;
+    if (gpio_pin == 26) {
+        adc_input = 0;
+    } else if (gpio_pin == 27) {
+        adc_input = 1;
+    } else if (gpio_pin == 28) {
+        adc_input = 2;
+    } else {
+        printf("Error: Invalid GPIO pin for ADC input. Using default GPIO26.\n");
+        adc_input = 0;
+    }
+
     // Initialize GPIO for analogue use
     adc_gpio_init(this->gpio_pin);
 
-    // Initialize ADC
+    // Initialize and configure the ADC
     adc_init();
-    adc_select_input(0); // Channel 0 corresponds to GPIO26
-    adc_set_clkdiv(1087);
-    adc_fifo_setup( // Enable the ADC FIFO (without DMA)
-        true,       // Write each completed conversion to the sample FIFO
-        false,      // Disable DMA data request (DREQ)
-        1,          // Trigger when at least 1 sample is present
-        false,      // Disable error bits
-        false       // Shift results to 8 bits
+    adc_select_input(adc_input);  // Select the ADC input channel based on the GPIO pin
+    adc_set_clkdiv(1087);          // Set clock divider for sampling rate (adjust as needed)
+    adc_fifo_setup(
+        true,   // Write each completed conversion to the sample FIFO
+        false,  // Disable DMA data request (DREQ)
+        1,      // Trigger when at least 1 sample is present in the FIFO
+        false,  // Disable error bits
+        true    // Shift results to 12 bits for ADC result (0-4095 range)
     );
-    adc_run(true); // Start ADC
+    adc_run(true); // Start ADC in free-running mode
 }
 
 /*! \brief Blocking read of ADC samples.
@@ -42,7 +57,7 @@ void microphone::init(uint gpio_pin)
  * stops the ADC from free-running mode and drains the FIFO buffer to discard any
  * remaining samples that were collected by the ADC but not yet processed.
  *
- * \param buffer Pointer to the buffer to store ADC samples.
+ * \param microphone_data Pointer to the buffer to store ADC samples.
  * \param buffer_size The size of the buffer (i.e., the number of samples to read).
  *
  * \note This function drains the FIFO after the required number of samples are read,
@@ -50,19 +65,20 @@ void microphone::init(uint gpio_pin)
  */
 void microphone::read_blocking(int16_t *microphone_data, size_t buffer_size)
 {
-    adc_run(true); // Enable free-running mode
+    adc_run(true);  // Start ADC in free-running mode
 
     for (size_t i = 0; i < buffer_size; ++i)
     {
-        microphone_data[i] = adc_fifo_get_blocking(); // Block until sample is available
+        uint16_t adc_value = adc_fifo_get_blocking();  // Read the next sample from the ADC FIFO
+        microphone_data[i] = (int16_t)(adc_value - DC_OFFSET);  // Subtract DC offset
     }
-    adc_run(false);   // Stop free-running mode after reading required samples
-    adc_fifo_drain(); // Drain any leftover samples in the FIFO
 
-    // process the microphone samples:
+    adc_run(false);   // Stop ADC free-running mode after reading required samples
+    adc_fifo_drain(); // Drain any leftover samples in the FIFO to clean up
+
+    // Process the microphone samples for Q15 format (optional, can be done in main task instead)
     for (size_t i = 0; i < buffer_size; ++i)
     {
-        microphone_data[i] -= DC_OFFSET;
-        microphone_data[i] = (int16_t)(microphone_data[i] << 5); // Left shift by 5 to scale into Q15 range
+        microphone_data[i] = (int16_t)(microphone_data[i] << 5);  // Left shift by 5 to scale into Q15 range
     }
 }
