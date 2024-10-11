@@ -12,6 +12,6 @@
 #define SNAKE_LENGTH 4 // Length of the "snake" led pattern
 
 // Function prototype for running the LED task
-void run_led_task(LEDs& ledStrip);
+void run_led_task();
 
 #endif // LED_TASK_H

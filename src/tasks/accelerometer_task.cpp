@@ -7,8 +7,20 @@
 #include "drivers/leds.h"
 #include "drivers/lis3dh.h"
 #include "task_manager.h"
+#include "board.h"
 
-void run_accelerometer_task(LIS3DH &lis3dh, LEDs &ledStrip) {
+void run_accelerometer_task() {
+    // Initialize PIO and state machine for controlling LEDs
+    LEDs ledStrip(LED_PIN, NUM_LEDS, pio0, 0);
+
+    // Create an instance of the LIS3DH accelerometer class
+    LIS3DH lis3dh(I2C_PORT, LIS3DH_I2C_ADDRESS, I2C_SDA_PIN, I2C_SCL_PIN);
+    if (!lis3dh.init()) {
+        printf("LIS3DH initialization failed!\n");
+        return;  // Exit the function if initialization failed
+    }
+    printf("LIS3DH initialized.\n");
+
     float x_g, y_g, z_g;
 
     // Loop for the accelerometer task

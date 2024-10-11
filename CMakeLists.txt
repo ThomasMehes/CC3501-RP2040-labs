@@ -60,6 +60,7 @@ if(CrossCompiling)
         src/tasks/microphone_task.cpp 
         src/tasks/led_task.cpp
         src/tasks/accelerometer_task.cpp
+        src/tasks/bluetooth_task.cpp
     )
     target_include_directories(labs
         PUBLIC 
@@ -121,6 +122,7 @@ else()
         src/tasks/microphone_task.cpp
         src/tasks/led_task.cpp
         src/tasks/accelerometer_task.cpp
+        src/tasks/bluetooth_task.cpp
     )
     target_include_directories(labs
         PUBLIC 

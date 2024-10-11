@@ -5,6 +5,6 @@
 #include "drivers/lis3dh.h"
 #include "drivers/leds.h"
 
-void run_accelerometer_task(LIS3DH &lis3dh, LEDs &ledStrip);
+void run_accelerometer_task();
 
 #endif // ACCELEROMETER_TASK_H

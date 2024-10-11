@@ -5,8 +5,9 @@
 #include <stdint.h>
 #include <cmath>
 #include "task_manager.h"
-#include "drivers/microphone.h" // Include microphone driver
-#include "drivers/leds.h"       // Include LEDs driver
+#include "drivers/microphone.h" 
+#include "drivers/leds.h"     
+#include "board.h"
 
 // Define constants and buffer sizes
 #define SAMPLE_SIZE 1024
@@ -17,8 +18,8 @@
 
 // Define LED bin boundaries (adjust based on your project)
 const uint16_t led_bins[13] = {6, 8, 11, 16, 24, 35, 51, 75, 110, 161, 237, 349, 513}; // From Matlab code
-const float32_t threshold = 0.00005f; // Lower threshold for LED activation
-// const float32_t threshold = 0.0001f;
+const float32_t threshold = 0.0001f;
+
 
 // Global buffers and variables
 static int16_t time_domain_signal[SAMPLE_SIZE];       // Buffer to store Q15 samples for FFT

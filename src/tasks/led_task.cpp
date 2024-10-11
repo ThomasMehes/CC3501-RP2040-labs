@@ -1,6 +1,8 @@
 // led_task.cpp
+
 #include "led_task.h"
 #include "task_manager.h"
+#include "board.h"
 #include <stdio.h>
 
 // Convert hue to RGB values
@@ -41,8 +43,11 @@ void hueToRGB(uint hue, uint8_t* red, uint8_t* green, uint8_t* blue) {
     *blue = (uint8_t)*blue;
 }
 
+// Static LED strip instance for this file only
+static LEDs ledStrip(LED_PIN, NUM_LEDS, pio0, 0);  // PIO0 and State Machine 0
+
 // Function to run the LED task (snake animation)
-void run_led_task(LEDs& ledStrip) {
+void run_led_task() {
     static uint hue = 0;  // Make the hue variable static to maintain its state between function calls
 
     // Task: Snake animation
@@ -62,9 +67,6 @@ void run_led_task(LEDs& ledStrip) {
 
             ledStrip.setColor(led_index, red, green, blue);
         }
-
-        volatile int no_op_delay = 0;  // Add this before sleep or delay calls
-        no_op_delay++;  // Increment to ensure it is not optimized out
 
         // Update LEDs to show the set colors
         ledStrip.update();
