@@ -1,3 +1,25 @@
+#include <stdio.h>
+#include <cmath>
+#include <stdint.h>
+#include "pico/stdlib.h"
+#include "hardware/pio.h"
+#include "hardware/gpio.h"
+#include "hardware/i2c.h"
+#include "arm_math.h"
+#include "arm_const_structs.h"  // Include the CMSIS-DSP library for FFT
+
+#include "WS2812.pio.h"   // Include WS2812 LED driver header
+#include "drivers/leds.h"               // DRIVER HEADERS
+#include "drivers/lis3dh.h"     
+#include "drivers/accelerometer.h"     
+#include "drivers/microphone.h"        
+
+#include "tasks/led_task.h"             // TASK HEADERS
+#include "tasks/accelerometer_task.h" 
+#include "tasks/microphone_task.h" 
+#include "tasks/bluetooth_task.h"
+#include "tasks/task_manager.h"  
+
 #include "board.h" // Include board-specific configurations
 
 // Global variable to track the current task
